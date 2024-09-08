@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+option go_package = "path/to/your/package/job";
+
+service JobService {
+    // 创建 job 任务
+    rpc CreateJob(Job) returns (CreateJobResp) {};
+
+    // 查看 job 执行信息
+    // rpc GetJob(GetJobReq) returns (Job) {};
+
+    // 查看 job 执行状态
+    // rpc GetJobStatus(Job) returns (JobStatus) {};
+
+    
+    // rpc GetJobResult(Job) returns (JobResult) {};
+
+    // // 查看 task 执行状态
+    // rpc GetTaskStatus(GetTaskStatusReq) returns (TaskStatus) {};
+
+    // // 查看 operator 执行状态
+    // rpc GetOperatorStatus(GetOperatorStatusReq) returns (OperatorStatus) {};
+}
+
+message Job {
+    string id = 1;
+    string name = 2;
+    repeated string target_nodes = 3;
+    repeated Task tasks = 4;
+}
+
+message Task {
+    string id = 1;
+    string name =2;
+    repeated Operator operators = 3;
+}
+
+message Operator {
+    string id = 1;
+    string name = 2;
+    string type = 3; // refer OperatorType
+    string content = 4;
+    repeated string vars = 5;
+    repeated string out_vars = 7;
+    int32 timeout = 8;
+}
+
+message CreateJobResp {
+    string job_id = 1;
+}

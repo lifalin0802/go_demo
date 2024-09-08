@@ -1,0 +1,306 @@
+
+Table "users" {
+  "id" int [pk, increment]
+  "name" varchar(128)
+  "email" varchar(128)
+  "phone" varchar(128) [note: '手机号']
+}
+
+Table "packages" {
+  "id" int [pk, increment]
+  "filename" varchar(512) [note: 'eg. cudnn-linux-x86_64-9.0.0.312_cuda12-archive.tar.xz']
+  "relative_path" varchar(1024) [note: 'eg. cudnn/cudnn-linux-x86_64-9.0.0.312_cuda12-archive.tar.xz']
+  "size" bigint [note: 'in byte, like  884762828']
+  "created_at" timestamp [note: 'eg. 2023-09-29T23:47:15']
+  "md5" varchar(512) [note: 'eg. 2d66eca078f49f9bb88f60cbc8ffdaed']
+  "type" varchar(256) [note: '软件包类型, 可以是conda, cudnn 等']
+  "package" varchar(256) [note: 'eg. anaconda']
+  "version" varchar(256) [note: 'eg. 9.0.0.312_cuda12, 或者以日期标注 eg. "23.10.0"']
+}
+
+Table "roles" {
+  "id" int [pk, increment]
+  "role_name" varchar(256)
+}
+
+Table "operators" {
+  "id" int [pk, increment]
+  "name" varchar(256)
+  "role_id" int
+  "opt_version" varchar(512) [note: '该operator的版本号, 默认是0']
+  "pkg_version" varchar(128) [note: 'role 的某个版本, 例如指定是535']
+  "created_at" timestamp [default: `now()`]
+  "updated_at" timestamp
+  "created_by" int [note: '操作人的user_id']
+  "updated_by" int [note: '操作人的user_id']
+  "original_opt_id" int [note: '原始operator的id']
+  "is_deleted" bool
+  "is_latest" bool
+}
+
+Table "variables" {
+  "id" int [pk, increment]
+  "role_id" int
+  "action_type" varchar(255) [note: '动作的类型,例如cuda, driver, fabric']
+  "var_name" varchar(255) [note: 'eg. local_nvidia_driver_path, local_cuda_driver_path, local_fabric_path']
+}
+
+Table "role_variable" {
+  "id" int [pk, increment]
+  "pkg_version" varchar(255) [note: 'eg. 535 550']
+  "varible_id" int
+  "variable_values" varchar(255) [note: 'eg. /data/fileserver/pkg/cuda/cuda_12.3.1_545.23.08_linux.run ']
+  "opt_version" varchar(512)
+  "package_id" int
+}
+
+Table "opertor_label" {
+  "id" int [pk, increment]
+  "operator_id" int
+  "label_id" int
+}
+
+Table "shells" {
+  "id" int [pk, increment]
+  "name" varchar(255) [note: 'eg. single_nccl_test']
+  "keywords" varchar(255) [note: '识别是否是下发给ansible主控机的指令, eg "esingle_nccl_test.sh" ']
+  "shell_template" text [note: '例如单机nccl测试为 ./script/set_multi_env.sh 												  ./script/single_nccl_test.sh <note_pool> 												  cat /tmp/single-nccl-test-<node_pool>.md']
+}
+
+Table "playbook_task" {
+  "id" int [pk, increment]
+  "name" varchar(256)
+  "created_at" timestamp [default: `now()`]
+  "updated_at" timestamp
+  "created_by" int
+  "updated_by" int
+  "version" int [note: 'task的version,新创建时是0, 每次修改自增1']
+  "original_task_id" int [note: '最初版本的该task的主键id']
+  "playbook_script" text
+  "is_latest" bool
+  "is_deleted" bool
+}
+
+Table "task_operator" {
+  "id" int [pk, increment]
+  "task_id" int [note: '当前版本的task的id']
+  "operator_id" int
+  "sequence" int [note: 'operator的顺序号']
+  "created_at" timestamp [default: `now()`]
+  "created_by" int
+  "task_version" int
+  "is_latest" bool
+  "is_deleted" bool
+}
+
+Table "shell_task" {
+  "id" int [pk, increment]
+  "shell_id" int
+  "params" varchar(256) [note: '例如是趣玩科技 qwkj']
+  "content" text [note: '例如  ./script/set_multi_env.sh 						  ./script/single_nccl_test.sh qwkj 						 cat /tmp/single-nccl-test-qwkj.md']
+  "version" int
+  "is_latest" bool
+  "created_by" int
+  "created_at" timestamp
+}
+
+Table "templates" {
+  "id" int [pk, increment]
+  "name" varchar(256)
+  "created_at" timestamp
+  "create_by" int
+}
+
+Table "template_task" {
+  "id" int [pk, increment]
+  "template_id" int
+  "playbook_task_id" int [note: '如果task_type 是ansible']
+  "shell_task_id" int
+  "sequence" int [note: '从1开始']
+  "task_type" varchar(30) [note: 'agent or ansible']
+}
+
+Table "labels" {
+  "id" int [pk, increment]
+  "k" varchar(256) [note: '标签的key']
+  "v" varchar(256) [note: '标签的value']
+}
+
+Table "task_label" {
+  "id" int [pk, increment]
+  "playbook_task_id" int [note: '只记录original_task_id即可']
+  "label_id" int
+}
+
+Table "Jobs" {
+  "id" int [pk, increment]
+  "job_name" varchar(256)
+  "comments" varchar(256)
+  "version" int
+  "is_latest" bool
+  "created_by" int
+  "created_at" timestamp
+  "updated_by" int
+  "updated_at" timestamp
+}
+
+Table "job_histories" {
+  "id" int [pk, increment]
+  "job_id" int
+  "job_version" int
+  "last_executed_time" timestamp
+  "duration" int [note: '单位是ms']
+  "status" varchar(255) [note: '可以是running, success, failure']
+  "executed_by" int
+}
+
+Table "job_items" {
+  "id" int [pk, increment]
+  "job_history_id" int
+  "template_id" int
+  "sequence" int [note: '从1 开始']
+}
+
+Table "job_item_nodes" {
+  "id" int [pk, increment]
+  "job_item_id" int
+  "type" varchar(32) [note: 'node or nood_pool']
+  "node_id" varchar(32) [note: '如果是node_pool 类型，此处可以为空']
+  "node_pool_id" varchar(32) [note: '如果是node 类型，此处可以为空']
+}
+
+Table "job_item_histories" {
+  "id" int [pk, increment]
+  "sequence" int [note: '从1 开始']
+  "status" varchar(32) [note: 'success or failure']
+  "item_type" varchar(32) [note: 'ansible or agent']
+  "playbook_task_id" int
+  "shell_task_id" int
+  "executed_time" timestamp
+  "duration" int [note: '单位是ms']
+  "ansible_output" text
+  "logs" text
+}
+
+Table "nodes" {
+  "id" int [pk, increment]
+  "registered_at" timestamp
+  "ip" varchar(30)
+  "node_type" varchar(10) [note: 'cpu or gpu']
+  "gpu_type" varchar(10) [note: '4090, A800, H100']
+  "is_locked" bool
+  "nodepool_id" int
+}
+
+Table "nodepools" {
+  "id" int [pk, increment]
+  "name" varchar(256)
+  "tenent_id" int
+}
+
+Table "node_nodepool" {
+  "id" int [pk, increment]
+  "node_id" int
+  "nodepool_id" int
+}
+
+Table "tenants" {
+  "id" int [pk, increment]
+  "name" varchar(256)
+  "created_at" timestamp
+  "created_by" int
+  "updated_at" timestamp
+  "updated_by" int
+}
+
+Table "node_label" {
+  "id" int [pk, increment]
+  "label_id" int
+  "node_id" int
+}
+
+Table "nodpool_label" {
+  "id" int [pk, increment]
+  "label_id" int
+  "nodepool_id" int
+}
+
+Ref:"roles"."id" < "operators"."role_id"
+
+Ref:"users"."id" < "operators"."created_by"
+
+Ref:"users"."id" < "operators"."updated_by"
+
+Ref:"operators"."id" < "operators"."original_opt_id"
+
+Ref:"roles"."id" < "variables"."role_id"
+
+Ref:"operators"."id" < "opertor_label"."operator_id"
+
+Ref:"labels"."id" < "opertor_label"."label_id"
+
+Ref:"users"."id" < "playbook_task"."created_by"
+
+Ref:"users"."id" < "playbook_task"."updated_by"
+
+Ref:"playbook_task"."id" < "playbook_task"."original_task_id"
+
+Ref:"playbook_task"."id" < "task_operator"."task_id"
+
+Ref:"operators"."id" < "task_operator"."operator_id"
+
+Ref:"users"."id" < "task_operator"."created_by"
+
+Ref:"shells"."id" < "shell_task"."shell_id"
+
+Ref:"users"."id" < "shell_task"."created_by"
+
+Ref:"users"."id" < "templates"."create_by"
+
+Ref:"templates"."id" < "template_task"."template_id"
+
+Ref:"playbook_task"."id" < "template_task"."playbook_task_id"
+
+Ref:"shell_task"."id" < "template_task"."shell_task_id"
+
+Ref:"playbook_task"."id" < "task_label"."playbook_task_id"
+
+Ref:"labels"."id" < "task_label"."label_id"
+
+Ref:"users"."id" < "Jobs"."created_by"
+
+Ref:"users"."id" < "Jobs"."updated_by"
+
+Ref:"Jobs"."id" < "job_histories"."job_id"
+
+Ref:"users"."id" < "job_histories"."executed_by"
+
+Ref:"job_histories"."id" < "job_items"."job_history_id"
+
+Ref:"templates"."id" < "job_items"."template_id"
+
+Ref:"job_items"."id" < "job_item_nodes"."job_item_id"
+
+Ref:"playbook_task"."id" < "job_item_histories"."playbook_task_id"
+
+Ref:"shell_task"."id" < "job_item_histories"."shell_task_id"
+
+Ref:"nodepools"."id" < "nodes"."nodepool_id"
+
+Ref:"tenants"."id" < "nodepools"."tenent_id"
+
+Ref:"nodes"."id" < "node_nodepool"."node_id"
+
+Ref:"nodepools"."id" < "node_nodepool"."nodepool_id"
+
+Ref:"users"."id" < "tenants"."created_by"
+
+Ref:"users"."id" < "tenants"."updated_by"
+
+Ref:"labels"."id" < "node_label"."label_id"
+
+Ref:"nodes"."id" < "node_label"."node_id"
+
+Ref:"labels"."id" < "nodpool_label"."label_id"
+
+Ref:"nodepools"."id" < "nodpool_label"."nodepool_id"

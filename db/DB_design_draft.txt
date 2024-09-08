@@ -1,0 +1,201 @@
+
+
+
+数据库地址：10.10.100.145      
+database名：devops_platform
+登录用户：root
+登录密码：admin@123..        
+数据库端口：3306      
+
+
+jobs:
+id    job_name    comments     version             create_at       updated_by      updated_at
+1        job1        111         1        false     
+1        job1        111         2        true    
+
+job_histories:  job_id, job_version 确定当前属于那个job
+id    job_id     job_version    last_executed_time   duration   status     executed_by 
+1        1            1                    
+2        1            1                   
+3        1            2
+4        1            2
+
+
+job_item: 由 job_history_id 确定当前属于那个job_histories, sequence 表示
+id     job_history_id  template_id    sequence
+1         1                 1            1       //如果该template 包含两个task
+2         2                 2            2
+
+3         3                 1            1
+4         4                 2            2
+
+
+job_item_nodes: 由job_item_id 确定属于那个job_item 
+id     job_item_id    type          node_id      node_pool_id
+1        1            node           3             NULL 
+2        1            node_pool      NULL           1         
+3        2            node_pool      NULL           3         
+
+
+job_item_histories:  通过job_item_id -> job_history_id -> job_id, job_version 已足够确认是哪个job的那个哪个version  每一条记录对应一个task
+id   job_item_id  sequence    status       item_type      playbook_task_id     shell_task_id    executed_time      duration    ansible_output       logs 
+1 	   1          1           success       ansible        1                    NULL             timestamp         6000ms           xxx              <log_file_path>     
+1 	   1          2           failure       agent          NULL                 1                timestamp         6000ms           xxx              <log_file_path>   
+																									              
+
+nodes:
+id    registered_at        ip      node_type     gpu_type     is_locked        node_pool_id
+
+
+
+nodepools:
+id     name              tenent_id     is_locked     created_at     created_by    updated_at     updated_by
+1      spare_nodepool      1            false            
+1      nodepool_1          1            true
+
+
+node_nodepool:
+id     nodepool_id      node_id       
+ 
+
+tenants:
+id      name             created_at    created_by    updated_at    updated_by 
+1       west_cloud   
+
+
+node_label:
+id      label_id     node_id
+
+
+
+nodpool_label:
+id      label_id      nodepool_id
+
+
+
+
+	
+
+
+
+roles:
+id       role_name
+1        ins_driver_cuda
+2        collect_net_driver_info
+3        user_set
+
+variables:
+id  role_id   role_name         action_type     var_name 
+1     1       ins_driver_cuda    driver        local_nvidia_driver_path
+2     1       ins_driver_cuda    cuda          local_cuda_driver_path
+3     1       ins_driver_cuda    fabric        local_fabric_path
+4     1       ins_driver_cuda    fabric        xxxxx
+
+
+role_variables:
+role_id  pkg_version  variable_id  package_id  version    variable_values
+  1		 550           1                         1        /data/fileserver/pkg/driver/NVIDIA-Linux-x86_64-550.54.14.run
+  1		 550           2		                 1        /data/fileserver/pkg/cuda/cuda_12.3.1_545.23.08_linux.run
+  1		 550           3                         1        /data/fileserver/pkg/fabric/nvidia-fabricmanager-550_550.54.14-1_amd64.deb  
+												         
+  1		 550           2		                 2        /data/fileserver/pkg/cuda/cuda_12.3.1_545.23.08_linux.run
+  1		 550           3                         2        /data/fileserver/pkg/fabric/nvidia-fabricmanager-550_550.54.14-1_amd64.deb
+												        
+  1      535           1                         1        /data/fileserver/pkg/driver/NVIDIA-Linux-x86_64-535.54.14.run
+  1      535           2                         1        /data/fileserver/pkg/cuda/cuda_12.2.0_535.54.03_linux.run
+  1      535           3                         1        
+
+operator = role + varibles 
+
+operators:
+id   name  role_id   pkg_verison  opt_version     description              original_opt_id    is_latest     is_deleted
+1          1         550           1              ins_driver_cuda                 1           false         false
+1          1         550           2              ins_driver_cuda                 1           true          false
+2          1         535           1              ins_driver_cuda                 2           true          false
+3          2         NULL          1              collect_net_driver_info         3           true          false
+
+
+task_operator:
+id    task_id    operator_id    sequesnce 	task_version     description                   created_by       created_at
+1        1         1             1          1                ins_driver_cuda  550
+1        1         3             2          1                collect_net_driver_info
+
+	
+playbook_task:
+id   version    original_task_id   is_latest   created_by     created_at   playbook_script 
+1     1          1                 true						               <script_details> 			
+
+
+script_details：
+- hosts: all
+  gather_facts: yes
+  vars:
+    local_nvidia_driver_path: "/data/fileserver/pkg/driver/NVIDIA-Linux-x86_64-550.54.14.run"
+    local_cuda_driver_path: "/data/fileserver/pkg/cuda/cuda_12.3.1_545.23.08_linux.run"
+    local_fabric_path: "/data/fileserver/pkg/fabric/nvidia-fabricmanager-550_550.54.14-1_amd64.deb"
+  roles:
+    - ins_driver_cuda   #安装驱动cuda,自动判断是否重装卸载cuda驱动；自动判断卸载以及安装fabric.
+    - collect_net_driver_info   #巡检网卡固件与多机测试必备基础信息
+
+
+shells
+id         name           keywords                shell_template
+1      nccl_single_test   single_nccl_test.sh     ./script/set_multi_env.sh \
+												  ./script/single_nccl_test.sh <note_pool> \
+												  cat /tmp/single-nccl-test-qwkj.md
+2      single torch test
+3      nccl_multi_test
+4      xxx                ip a 
+
+
+shell_task:
+id    shell_id    params  content                                     version   is_latest     created_at    created_by 
+1      1          qwkj     ./script/set_multi_env.sh \
+							& ./script/single_nccl_test.sh qwkj \
+							& cat /tmp/single-nccl-test-qwkj.md
+
+1      2          qwkj     ./script/set_multi_env.sh \
+							& ./script/single_nccl_test.sh qwkj \
+							& cat /tmp/single-nccl-test-qwkj.md
+
+
+
+template:  
+id    name  created_at     created_by
+1     
+
+template_task:
+id    template_id   playbook_id  shell_id  sequence  task_type      
+1          1            1         NULL      1        ansible  
+1          1            NULL      1         2        ansible(此处标记为指令下发到ansible, 而不是下发到agent)
+1          1            NULL      2         3        agent   ip a 
+
+
+# task_1
+ansible-playbook -i ../env-hosts/falin_test_hosts base_delivery.yaml
+cat /tmp/host_info.md # 查看结果se
+cat /tmp/net_driver_info.md # 查看结果
+
+# task_2
+./script/set_multi_env.sh
+./script/single_nccl_test.sh <node_pool> #执行nccl单机测试
+cat /tmp/single-nccl-test-qwkj.md #检查执行结果
+
+# task_3
+./script/set_multi_env.sh
+./script single_torch_test.sh <node_pool> # 趣玩科技，单机torch执行
+cat /tmp/single-torch-test-qwkj.md # 查看执行结果
+
+# task_4
+./script/set_multi_env.sh
+bash multi_test.sh nccl all #开始执行测试
+cat /opt/node_multi_nccl_test_2.md #查看结果
+
+# task_5
+./script/set_multi_env.sh
+bash multi_test.sh torch 1 10 all  # 执行测试
+cat /opt/node_multi_nccl_test_2.md  # 检查结果
+
+
+
+另外 task 是程序内部自己划分的单位，不对UI 做出展示，以免使用者困扰
